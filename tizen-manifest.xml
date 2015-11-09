@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns="http://tizen.org/ns/packages" api-version="2.3" package="org.example.basicgles" version="1.0.0">
+	<profile name="mobile" />
+	<ui-application appid="org.example.basicgles" exec="basicgles" type="capp" multiple="false" taskmanage="true" nodisplay="false" launch_mode="single">
+		<icon>basicgles.png</icon>
+		<label>basicgles</label>
+	</ui-application>
+</manifest>
