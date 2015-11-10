@@ -34,6 +34,7 @@ static Evas_Object* add_win(const char *name)
 {
 	Evas_Object *win;
 
+        // TODO: add comment for preference set with opengl
 	elm_config_accel_preference_set("opengl");
 	win = elm_win_util_standard_add(name, "OpenGL example: Cube");
 
