@@ -3,7 +3,6 @@
 //
 
 
-#include <Elementary_GL_Helpers.h>
 #include <basicgles.h>
 #include <gl_utils.h>
 
@@ -12,39 +11,39 @@ ELEMENTARY_GLVIEW_GLOBAL_DEFINE();
 const float cube_vertices[] =
         {
                 -0.5f, -0.5f, -0.5f,
-                -0.5f, -0.5f,  0.5f,
-                0.5f, -0.5f,  0.5f,
+                -0.5f, -0.5f, 0.5f,
+                0.5f, -0.5f, 0.5f,
                 0.5f, -0.5f, -0.5f,
-                -0.5f,  0.5f, -0.5f,
-                -0.5f,  0.5f,  0.5f,
-                0.5f,  0.5f,  0.5f,
-                0.5f,  0.5f, -0.5f,
+                -0.5f, 0.5f, -0.5f,
+                -0.5f, 0.5f, 0.5f,
+                0.5f, 0.5f, 0.5f,
+                0.5f, 0.5f, -0.5f,
                 -0.5f, -0.5f, -0.5f,
-                -0.5f,  0.5f, -0.5f,
-                0.5f,  0.5f, -0.5f,
+                -0.5f, 0.5f, -0.5f,
+                0.5f, 0.5f, -0.5f,
                 0.5f, -0.5f, -0.5f,
-                -0.5f, -0.5f,  0.5f,
-                -0.5f,  0.5f,  0.5f,
-                0.5f,  0.5f,  0.5f,
-                0.5f, -0.5f,  0.5f,
+                -0.5f, -0.5f, 0.5f,
+                -0.5f, 0.5f, 0.5f,
+                0.5f, 0.5f, 0.5f,
+                0.5f, -0.5f, 0.5f,
                 -0.5f, -0.5f, -0.5f,
-                -0.5f, -0.5f,  0.5f,
-                -0.5f,  0.5f,  0.5f,
-                -0.5f,  0.5f, -0.5f,
+                -0.5f, -0.5f, 0.5f,
+                -0.5f, 0.5f, 0.5f,
+                -0.5f, 0.5f, -0.5f,
                 0.5f, -0.5f, -0.5f,
-                0.5f, -0.5f,  0.5f,
-                0.5f,  0.5f,  0.5f,
-                0.5f,  0.5f, -0.5f
+                0.5f, -0.5f, 0.5f,
+                0.5f, 0.5f, 0.5f,
+                0.5f, 0.5f, -0.5f
         };
 
 const int cube_indices_count = 36;
 const unsigned short cube_indices[] =
         {
-                0,  2,  1,
-                0,  3,  2,
-                4,  5,  6,
-                4,  6,  7,
-                8,  9, 10,
+                0, 2, 1,
+                0, 3, 2,
+                4, 5, 6,
+                4, 6, 7,
+                8, 9, 10,
                 8, 10, 11,
                 12, 15, 14,
                 12, 14, 13,
@@ -81,6 +80,36 @@ const float cube_colors[] =
                 1.0, 0.773, 0.553, 1.0,
                 1.0, 0.773, 0.553, 1.0
         };
+
+const float cube_texs[] =
+        {
+                0.0, 0.0,
+                1.0, 0.0,
+                1.0, 1.0,
+                0.0, 1.0,
+                0.0, 0.0,
+                1.0, 0.0,
+                1.0, 1.0,
+                0.0, 1.0,
+                0.0, 0.0,
+                1.0, 0.0,
+                1.0, 1.0,
+                0.0, 1.0,
+                0.0, 0.0,
+                1.0, 0.0,
+                1.0, 1.0,
+                0.0, 1.0,
+                0.0, 0.0,
+                1.0, 0.0,
+                1.0, 1.0,
+                0.0, 1.0,
+                0.0, 0.0,
+                1.0, 0.0,
+                1.0, 1.0,
+                0.0, 1.0
+        };
+
+
 
 /*
 const float cube_colors[] =
@@ -137,20 +166,54 @@ static const char fragment_shader[] =
                 "    gl_FragColor = v_color;\n"
                 "}";
 
-static void init_shaders(Evas_Object *obj)
-{
+
+/* Vertex Shader texture Source */
+static const char vertex_tex_shader[] =
+        "uniform mat4 u_mvpMatrix;\n"
+                "attribute vec4 a_position;\n"
+                "attribute vec2 a_tex;\n"
+                "varying vec2 v_tex;\n"
+                "\n"
+                "void main()\n"
+                "{\n"
+                "    v_tex = a_tex;\n"
+                "    gl_Position = u_mvpMatrix * a_position;\n"
+                "}";
+
+/* Fragment Shader texture Source */
+static const char fragment_tex_shader[] =
+        "#ifdef GL_ES\n"
+                "precision mediump float;\n"
+                "#endif\n"
+                "uniform sampler2D u_texSampler;\n"
+                "varying vec2 v_tex;\n"
+                "\n"
+                "void main (void)\n"
+                "{\n"
+                "    gl_FragColor = texture2D(u_texSampler, v_tex);\n"
+                "}";
+
+static void init_shaders(Evas_Object *obj) {
     appdata_s *ad = evas_object_data_get(obj, "ad");
     const char *p;
 
-    p = vertex_shader;
+    p = vertex_tex_shader;
     ad->vtx_shader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(ad->vtx_shader, 1, &p, NULL);
     glCompileShader(ad->vtx_shader);
 
-    p = fragment_shader;
+    GLint compiled = 0;
+    glGetShaderiv(ad->vtx_shader, GL_COMPILE_STATUS, &compiled);
+    if (!compiled) exit(1);
+
+    p = fragment_tex_shader;
     ad->fgmt_shader = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(ad->fgmt_shader, 1, &p, NULL);
     glCompileShader(ad->fgmt_shader);
+
+    glGetShaderiv(ad->fgmt_shader, GL_COMPILE_STATUS, &compiled);
+    if (!compiled) exit(1);
+
 
     ad->program = glCreateProgram();
     glAttachShader(ad->program, ad->vtx_shader);
@@ -158,29 +221,35 @@ static void init_shaders(Evas_Object *obj)
 
     glLinkProgram(ad->program);
 
-    ad->idx_position = glGetAttribLocation(ad->program, "a_position");
-    ad->idx_color = glGetAttribLocation(ad->program, "a_color");
+    GLint linkStatus = GL_FALSE;
+    glGetProgramiv(ad->program, GL_LINK_STATUS, &linkStatus);
+    if (linkStatus != GL_TRUE) exit(1);
+
+
+    ad->idx_a_position = glGetAttribLocation(ad->program, "a_position");
+    ad->idx_a_color = glGetAttribLocation(ad->program, "a_color");
+    ad->idx_a_tex = glGetAttribLocation(ad->program, "a_tex");
+
     ad->idx_mvp = glGetUniformLocation(ad->program, "u_mvpMatrix");
+    ad->idx_tex = glGetUniformLocation(ad->program, "u_texSampler");
 
     glUseProgram(ad->program);
 }
 
 static void
-mouse_down_cb(void *data, Evas *e , Evas_Object *obj , void *event_info)
-{
+mouse_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info) {
     appdata_s *ad = data;
     ad->mouse_down = EINA_TRUE;
 }
 
 static void
-mouse_move_cb(void *data, Evas *e , Evas_Object *obj , void *event_info)
-{
+mouse_move_cb(void *data, Evas *e, Evas_Object *obj, void *event_info) {
     Evas_Event_Mouse_Move *ev;
-    ev = (Evas_Event_Mouse_Move *)event_info;
+    ev = (Evas_Event_Mouse_Move *) event_info;
     appdata_s *ad = data;
     float dx = 0, dy = 0;
 
-    if(ad->mouse_down) {
+    if (ad->mouse_down) {
         dx = ev->cur.canvas.x - ev->prev.canvas.x;
         dy = ev->cur.canvas.y - ev->prev.canvas.y;
         ad->xangle += dy;
@@ -189,26 +258,22 @@ mouse_move_cb(void *data, Evas *e , Evas_Object *obj , void *event_info)
 }
 
 static void
-mouse_up_cb(void *data, Evas *e , Evas_Object *obj , void *event_info)
-{
+mouse_up_cb(void *data, Evas *e, Evas_Object *obj, void *event_info) {
     appdata_s *ad = data;
     ad->mouse_down = EINA_FALSE;
 }
 
 // GL Init function
-static void init_gl(Evas_Object *glview)
-{
+static void init_gl(Evas_Object *glview) {
     // Set gl state color to black
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-
-    // Do any form of OpenGL ES initialization here
-    // init_shaders();
-    // init_vertices();
 
     appdata_s *ad = evas_object_data_get(glview, "ad");
 
     if (!ad->initialized) {
         init_shaders(glview);
+        ad->texture = read_texture(ad->win, "tizen_noalpha.png");
+
         glEnable(GL_DEPTH_TEST);
         ad->initialized = EINA_TRUE;
     }
@@ -218,8 +283,7 @@ static void init_gl(Evas_Object *glview)
 }
 
 // GLView resize function
-static void resize_gl(Evas_Object *glview)
-{
+static void resize_gl(Evas_Object *glview) {
     appdata_s *ad = evas_object_data_get(glview, "ad");
 
     int w, h;
@@ -230,8 +294,7 @@ static void resize_gl(Evas_Object *glview)
 }
 
 // GL draw callback
-static void draw_gl(Evas_Object *glview)
-{
+static void draw_gl(Evas_Object *glview) {
 
     appdata_s *ad = evas_object_data_get(glview, "ad");
     float model[16], view[16];
@@ -254,60 +317,58 @@ static void draw_gl(Evas_Object *glview)
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glVertexAttribPointer(ad->idx_position, 3, GL_FLOAT, GL_FALSE,
-                          3 * sizeof(float), cube_vertices);
-    glVertexAttribPointer(ad->idx_color, 4, GL_FLOAT, GL_FALSE,
-                          4 * sizeof(float), cube_colors);
+    glVertexAttribPointer(ad->idx_a_position, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), cube_vertices);
+    glVertexAttribPointer(ad->idx_a_color, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), cube_colors);
+    glVertexAttribPointer(ad->idx_a_tex, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), cube_texs);
 
-    glEnableVertexAttribArray(ad->idx_position);
-    glEnableVertexAttribArray(ad->idx_color);
+    glEnableVertexAttribArray(ad->idx_a_position);
+    glEnableVertexAttribArray(ad->idx_a_color);
+    glEnableVertexAttribArray(ad->idx_a_tex);
 
     glUniformMatrix4fv(ad->idx_mvp, 1, GL_FALSE, ad->mvp);
 
-    glDrawElements(GL_TRIANGLES, cube_indices_count, GL_UNSIGNED_SHORT,
-                   cube_indices);
+    glBindTexture(GL_TEXTURE_2D, ad->texture);
+    glActiveTexture(GL_TEXTURE0);
+    glUniform1i(ad->idx_tex, 0);
+
+    glDrawElements(GL_TRIANGLES, cube_indices_count, GL_UNSIGNED_SHORT, cube_indices);
 
     glFlush();
 
     float fps = get_fps();
-    if(fps > 0) {
+    if (fps > 0) {
         char buff[200];
-        sprintf(buff, "<color=#FFF>Cube<br>"
-                "FPS: %.2f</color>", fps);
+        sprintf(buff, "<color=#FFF>Cube<br>FPS: %.2f</color>", fps);
         elm_object_text_set(ad->fps_label, buff);
     }
 
 }
 
 // Delete GLView callback
-static void del_gl(Evas_Object *glview)
-{
+static void del_gl(Evas_Object *glview) {
     appdata_s *ad = evas_object_data_get(glview, "ad");
 
     glDeleteShader(ad->vtx_shader);
     glDeleteShader(ad->fgmt_shader);
     glDeleteProgram(ad->program);
 
-    evas_object_data_del((Evas_Object*) glview, "ad");
+    evas_object_data_del((Evas_Object *) glview, "ad");
 }
 
-static void del_anim(void *data, Evas *evas, Evas_Object *obj, void *event_info)
-{
+static void del_anim(void *data, Evas *evas, Evas_Object *obj, void *event_info) {
     appdata_s *ad = data;
     ecore_animator_del(ad->ani);
 }
 
-static Eina_Bool anim(void *data)
-{
+static Eina_Bool anim(void *data) {
     elm_glview_changed_set(data);
     return EINA_TRUE;
 }
 
 
-Evas_Object*
-add_glview(Evas_Object* parent, appdata_s *ad)
-{
-    Evas_Object* gl;
+Evas_Object *
+add_glview(Evas_Object *parent, appdata_s *ad) {
+    Evas_Object *gl;
 
     /* Create and initialize GLView */
     gl = elm_glview_add(parent);
