@@ -1,95 +1,6 @@
 #include "basicgles.h"
 
-#include <Elementary_GL_Helpers.h>
-ELEMENTARY_GLVIEW_GLOBAL_DEFINE();
 
-
-// GL Init function
-static void init_gl(Evas_Object *glview)
-{
-	// Set gl state color to pink
-	glClearColor(1.0, 0.2, 0.6, 1.0);
-
-	// Do any form of OpenGL ES initialization here
-	// init_shaders();
-	// init_vertices();
-}
-
-// GLView resize function
-static void resize_gl(Evas_Object *glview)
-{
-	int w, h;
-	elm_glview_size_get(glview, &w, &h);
-	glViewport(0, 0, w, h);
-}
-
-// GL draw callback
-static void draw_gl(Evas_Object *glview)
-{
-	// Paint it pink
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	// The usual OpenGL ES draw commands come here
-	// draw_scene();
-}
-
-// Delete GLView callback
-static void del_gl(Evas_Object *glview)
-{
-	// Destroy all the OpenGL ES resources here
-	// destroy_shaders();
-	// destroy_objects();
-}
-
-static Evas_Object*
-add_glview(Evas_Object* parent, appdata_s *ad)
-{
-	Evas_Object* gl;
-
-	/* Create and initialize GLView */
-	gl = elm_glview_add(parent);
-
-	ELEMENTARY_GLVIEW_GLOBAL_USE(gl);
-	evas_object_size_hint_align_set(gl, EVAS_HINT_FILL, EVAS_HINT_FILL);
-	evas_object_size_hint_weight_set(gl, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-
-	/* Request a surface with alpha and a depth buffer */
-	elm_glview_mode_set(gl, ELM_GLVIEW_ALPHA | ELM_GLVIEW_DEPTH);
-
-	/* The resize policy tells GLView what to do with the surface when it
-	 * resizes. ELM_GLVIEW_RESIZE_POLICY_RECREATE will tell it to
-	 * destroy the current surface and recreate it to the new size.
-	 */
-	elm_glview_resize_policy_set(gl, ELM_GLVIEW_RESIZE_POLICY_RECREATE);
-
-	/* The render policy sets how GLView should render GL code.
-	 * ELM_GLVIEW_RENDER_POLICY_ON_DEMAND will have the GL callback
-	 * called only when the object is visible.
-	 * ELM_GLVIEW_RENDER_POLICY_ALWAYS would cause the callback to be
-	 * called even if the object were hidden.
-	 */
-	elm_glview_render_policy_set(gl, ELM_GLVIEW_RENDER_POLICY_ON_DEMAND);
-
-	/* The initialize callback function gets registered here */
-	elm_glview_init_func_set(gl, init_gl);
-
-	/* The delete callback function gets registered here */
-	elm_glview_del_func_set(gl, del_gl);
-
-	/* The resize callback function gets registered here */
-	elm_glview_resize_func_set(gl, resize_gl);
-
-	/* The render callback function gets registered here */
-	elm_glview_render_func_set(gl, draw_gl);
-
-	elm_object_focus_set(gl, EINA_TRUE);
-
-	/* Add the GLView to the parent and show it */
-	elm_object_content_set(parent, gl);
-	evas_object_show(gl);
-
-	return gl;
-}
 
 
 static void
@@ -161,15 +72,15 @@ create_base_gui(appdata_s *ad)
 	// Show the naviframe
 	evas_object_show(ad->naviframe);
 
+	Evas_Object *table = elm_table_add(ad->naviframe);
+
 	// Create the box
-	Evas_Object *box = elm_box_add(ad->naviframe);
+	Evas_Object *box = elm_box_add(table);
 
 	// Set the box vertical
 	elm_box_horizontal_set(box, EINA_FALSE);
-
 	// The box expands when its contents need more space
 	evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-
 	// The box fills the available space
 	evas_object_size_hint_align_set(box, EVAS_HINT_FILL, EVAS_HINT_FILL);
 
@@ -179,8 +90,25 @@ create_base_gui(appdata_s *ad)
 	// Show the box
 	evas_object_show(box);
 
+	Evas_Object *label_box = elm_box_add(table);
+	elm_box_horizontal_set(label_box, EINA_FALSE);
+	evas_object_size_hint_weight_set(label_box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+	evas_object_size_hint_align_set(label_box, EVAS_HINT_FILL, EVAS_HINT_FILL);
+	evas_object_show(label_box);
+
+	ad->fps_label = elm_label_add(label_box);
+	elm_object_text_set(ad->fps_label, "<align=left color=#FFFFFF>FPS</align>");
+	evas_object_size_hint_weight_set(ad->fps_label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+	evas_object_size_hint_align_set(ad->fps_label, 0.0, 0.0);
+	evas_object_show(ad->fps_label);
+	elm_box_pack_end(label_box, ad->fps_label);
+
+	elm_table_pack(table, box, 0, 0, 1, 1);
+	elm_table_pack(table, label_box, 0, 0, 1, 1);
+	evas_object_show(table);
+
 	// Add the box in the naviframe container
-	elm_naviframe_item_push(ad->naviframe, "Basic GLES App", NULL, NULL, box, NULL);
+	elm_naviframe_item_push(ad->naviframe, "Basic GLES App", NULL, NULL, table, NULL);
 
 	/* Show window after base gui is set up */
 	evas_object_show(ad->win);
