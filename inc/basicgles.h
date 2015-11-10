@@ -6,6 +6,7 @@
 #include <system_settings.h>
 #include <efl_extension.h>
 #include <dlog.h>
+#include <Elementary_GL_Helpers.h>
 
 #ifdef  LOG_TAG
 #undef  LOG_TAG
@@ -15,6 +16,8 @@
 #if !defined(PACKAGE)
 #define PACKAGE "org.example.basicgles"
 #endif
+
+ELEMENTARY_GLVIEW_GLOBAL_DECLARE();
 
 typedef struct appdata {
 	const char *name;
@@ -33,13 +36,19 @@ typedef struct appdata {
 	unsigned int program;
 	unsigned int vtx_shader;
 	unsigned int fgmt_shader;
+	unsigned int texture;
 
 	float xangle;
 	float yangle;
 
-	unsigned int idx_position;
-	unsigned int idx_color;
+	// Locations for vertex attribute
+	unsigned int idx_a_position;
+	unsigned int idx_a_color;
+	unsigned int idx_a_tex;
+
+	// Locations for shdaer uniforms
 	int idx_mvp;
+	int idx_tex;
 
 	float mvp[16];
 
@@ -51,5 +60,7 @@ typedef struct appdata {
 Evas_Object*
 		add_glview(Evas_Object* parent, appdata_s *ad);
 
+// in gl_tex.c
+unsigned int read_texture(Evas_Object *parent, const char *filename);
 
 #endif /* __basicgles_H__ */
